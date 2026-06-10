@@ -1,0 +1,78 @@
+buildscript {
+  ext.ConvexBridgeConfig = [
+    kotlinVersion: "2.0.21",
+    minSdkVersion: 24,
+    compileSdkVersion: 36,
+    targetSdkVersion: 36
+  ]
+
+  ext.getExtOrDefault = { prop ->
+    if (rootProject.ext.has(prop)) {
+      return rootProject.ext.get(prop)
+    }
+
+    return ConvexBridgeConfig[prop]
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "com.android.tools.build:gradle:8.7.2"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
+    // KSP compiler dependency matching our Kotlin version
+    classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:2.0.21-1.0.27"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+apply plugin: "com.google.devtools.ksp"
+apply plugin: "com.facebook.react"
+
+android {
+  namespace "com.convexrn"
+
+  compileSdkVersion getExtOrDefault("compileSdkVersion")
+
+  defaultConfig {
+    minSdkVersion getExtOrDefault("minSdkVersion")
+    targetSdkVersion getExtOrDefault("targetSdkVersion")
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  lint {
+    disable "GradleCompatible"
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android"
+
+  // AppSearch local database indexing dependencies
+  implementation "androidx.appsearch:appsearch:1.1.0-alpha06"
+  implementation "androidx.appsearch:appsearch-platform-storage:1.1.0-alpha06"
+  ksp "androidx.appsearch:appsearch-compiler:1.1.0-alpha06"
+
+  // Jetpack AppFunctions dependencies for Gemini agent execution
+  implementation "androidx.appfunctions:appfunctions:1.0.0-alpha08"
+  implementation "androidx.appfunctions:appfunctions-service:1.0.0-alpha08"
+  ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha08"
+}
+
