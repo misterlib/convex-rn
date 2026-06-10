@@ -1,0 +1,52 @@
+name: Convex Compatibility Monitor
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node & Install Dependencies
+        uses: ./.github/actions/setup
+
+      - name: Upgrade Convex to Latest
+        run: |
+          yarn up convex@latest
+
+      - name: Run Typecheck
+        run: |
+          yarn typecheck
+
+      - name: Run Build
+        run: |
+          yarn prepare
+
+      - name: Run Tests
+        run: |
+          yarn test
+
+      - name: Create Issue on Failure
+        if: failure()
+        run: |
+          gh issue create \
+            --title "🚨 Convex Compatibility Check Failed" \
+            --body "The scheduled compatibility check with the latest version of \`convex\` failed.
+
+            **Please review the run details:**
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            If there are breaking API changes in the new Convex release, updates may be required in \`convex-rn\`." \
+            --label "bug"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

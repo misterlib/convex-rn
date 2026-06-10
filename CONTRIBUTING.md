@@ -102,15 +102,15 @@ We follow the [conventional commits specification](https://www.conventionalcommi
 Our pre-commit hooks verify that your commit message matches this format when committing.
 
 
-### Publishing to npm
+### Versioning and Releases
 
-We use [release-it](https://github.com/release-it/release-it) to make it easier to publish new versions. It handles common tasks like bumping version based on semver, creating tags and releases etc.
+We use Google's [Release Please](https://github.com/googleapis/release-please) to automate our versioning, changelog generation, and GitHub release creation.
 
-To publish new versions, run the following:
-
-```sh
-yarn release
-```
+1. **Development & Commits**: Write conventional commits (e.g., `feat: add ...` or `fix: ...`). Breaking changes must be marked (e.g., `feat!: ...` or with `BREAKING CHANGE:` in the commit footer).
+2. **Release PR**: When changes are merged into the `main` branch, a GitHub Action automatically opens/updates a "Release PR". This PR bumps the version in `package.json` and updates `CHANGELOG.md` with the release notes.
+3. **Triggering a Release**: Merging the Release PR will:
+   - Create a GitHub Release and tag the commit (e.g., `v1.0.0`).
+   - Build and publish the package to NPM (if the `NPM_TOKEN` secret is configured in the repository).
 
 
 ### Scripts

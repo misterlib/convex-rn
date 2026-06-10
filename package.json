@@ -96,7 +96,7 @@
     "react-native": "*",
     "react-native-mmkv": "*",
     "@react-native-community/netinfo": "*",
-    "convex": "*"
+    "convex": ">=1.16.0"
   },
   "workspaces": [
     "example"

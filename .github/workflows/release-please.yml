@@ -1,0 +1,41 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: node
+
+      # Setup and publish if a release was created and NPM_TOKEN is provided
+      - name: Checkout
+        if: ${{ steps.release.outputs.release_created }}
+        uses: actions/checkout@v4
+
+      - name: Setup Node & Install Dependencies
+        if: ${{ steps.release.outputs.release_created }}
+        uses: ./.github/actions/setup
+
+      - name: Publish to NPM
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NPM_TOKEN" ]; then
+            echo "NPM_TOKEN is not configured. Skipping NPM publish step."
+            exit 0
+          fi
+          npm config set //registry.npmjs.org/:_authToken "${NPM_TOKEN}"
+          yarn prepare
+          npm publish --access public
