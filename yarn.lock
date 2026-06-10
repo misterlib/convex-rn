@@ -5421,7 +5421,8 @@ __metadata:
     react: "npm:19.2.3"
     react-native: "npm:0.85.0"
     react-native-builder-bob: "npm:^0.42.1"
-    react-native-mmkv: "npm:^3.1.0"
+    react-native-mmkv: "npm:^4.3.1"
+    react-native-nitro-modules: "npm:^0.1.0"
     react-native-web: "npm:~0.21.2"
     release-it: "npm:^20.2.0"
     turbo: "npm:^2.9.16"
@@ -5432,6 +5433,7 @@ __metadata:
     react: "*"
     react-native: "*"
     react-native-mmkv: "*"
+    react-native-nitro-modules: "*"
   languageName: unknown
   linkType: soft
 
@@ -10516,13 +10518,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-mmkv@npm:^3.1.0":
-  version: 3.3.3
-  resolution: "react-native-mmkv@npm:3.3.3"
+"react-native-mmkv@npm:^4.3.1":
+  version: 4.3.1
+  resolution: "react-native-mmkv@npm:4.3.1"
   peerDependencies:
     react: "*"
     react-native: "*"
-  checksum: 10c0/efd7f725674d686ea126a213bd8c4270e8e4e8f306917a1b846a9f7ddf652ad057c7d509a9292d7bbf6a58603d4ab5a18e0c3b0d1b00447df45eeac81cbbd1e1
+    react-native-nitro-modules: "*"
+  checksum: 10c0/cfafff8e9837e9244c4544fcf26d8570f66539e97ade7ee9cfd2dc51328b6e793357a29a8336bf6f5a540f894780726ae404fef5059756b157ea3cee2fce6566
   languageName: node
   linkType: hard
 
@@ -10533,6 +10536,16 @@ __metadata:
     escape-string-regexp: "npm:^5.0.0"
     fast-glob: "npm:^3.3.3"
   checksum: 10c0/e0343807046c16d5fb5999b966e0a70fd8a757d658f58f10bee830485fa600ffb8de9100dea1cdead36a639c3e18a0f697b35e22a5564cb74e437d8aeca30d87
+  languageName: node
+  linkType: hard
+
+"react-native-nitro-modules@npm:^0.1.0":
+  version: 0.1.7
+  resolution: "react-native-nitro-modules@npm:0.1.7"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/1232784c5e03b3a3c8eca8804f92d54814ad47b98e432ea212851bc76919899ee8b0e1500f18c9b642de1e0476f66bf118986e2504d402f7b0b0259ea396f15c
   languageName: node
   linkType: hard
 

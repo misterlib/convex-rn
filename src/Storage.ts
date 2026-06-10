@@ -1,4 +1,4 @@
-import { MMKV } from 'react-native-mmkv';
+import { type MMKV, createMMKV } from 'react-native-mmkv';
 
 export interface Storage {
   getItem(key: string): string | null;
@@ -13,7 +13,7 @@ class MMKVStorage implements Storage {
 
   constructor() {
     try {
-      this.mmkv = new MMKV({
+      this.mmkv = createMMKV({
         id: 'convex-rn-sync-storage',
       });
     } catch (e) {
@@ -41,7 +41,7 @@ class MMKVStorage implements Storage {
 
   removeItem(key: string): void {
     if (this.mmkv) {
-      this.mmkv.delete(key);
+      this.mmkv.remove(key);
     } else {
       this.memoryCache.delete(key);
     }
