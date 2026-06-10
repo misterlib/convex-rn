@@ -76,6 +76,29 @@ When designing your app's sync rules, use this framework to map questions to you
 
 Below are samples showing how developers can implement custom iOS App Intents querying the generic `ConvexEntity` table.
 
+### 4.1 Out-of-the-Box Siri & Notes Schema Intents (iOS 18+ Requirement)
+
+The library provides pre-packaged Siri intents for generic search (`SearchConvexIntent` conforming to `.notes.searchNotes` schema, and `ConvexEntityRepresentation` conforming to `.notes.note` schema).
+
+> [!WARNING]
+> **Xcode Compile-Time Limitation**: Apple's `.notes` schema is only available at compile-time when using Xcode 16+ (iOS 18 SDK) and targeting a deployment target of **iOS 18.0+**. If a project targets a lower version (like iOS 17.0), Xcode will fail to compile with the error:
+> `type 'AssistantSchemas.Intent' has no member 'notes'`
+
+#### Integration Steps:
+To prevent build failures, the pre-packaged Siri intent files are located in `node_modules/convex-rn/ios/siri/` and excluded from the library's core CocoaPods target. To use them:
+1. Ensure your host application is configured with a deployment target of **iOS 18.0** or newer.
+2. In Xcode, right-click your main app group and choose **Add Files to "[YourApp]"...**
+3. Navigate to `node_modules/convex-rn/ios/siri/` and select:
+   - `SearchConvexIntent.swift`
+   - `ConvexEntityRepresentation.swift`
+4. Ensure **Copy items if needed** is unchecked (or copy them if preferred), select your main app target in the **Add to targets** checklist, and click **Add**.
+5. Open both files in Xcode and ensure they import the core library module:
+   ```swift
+   import ConvexRn
+   ```
+
+---
+
 ### Sample 1: Relational Query Intent (Finding Last Attendance)
 This intent satisfies the question: *"When was the last time [Attendee] was at an event?"*
 
@@ -83,6 +106,7 @@ This intent satisfies the question: *"When was the last time [Attendee] was at a
 import AppIntents
 import SwiftData
 import Foundation
+import ConvexRn
 
 public struct GetLastEventForAttendeeIntent: AppIntent {
     public static var title: LocalizedStringResource = "Get Last Event For Attendee"
@@ -232,7 +256,7 @@ I have a feature that tracks: [INSERT YOUR APP FEATURE NAME / TABLES, e.g. Atten
 I want my users to be able to ask Siri or Gemini: [INSERT QUESTION, e.g. "When was the last time X was at an event?"]
 
 Please generate:
-1. An iOS AppIntent class using the '@AssistantIntent(schema: ...)' macro that fetches the appropriate 'ConvexEntity' elements, handles JSON parsing of the 'jsonData' payload, and returns a user-facing string. Use the registered '@Dependency private var modelContainer: ModelContainer' for query execution.
+1. An iOS AppIntent class using the '@AssistantIntent(schema: ...)' macro (be sure to include `import ConvexRn` at the top and note that Notes schema intents require iOS 18+ deployment target) that fetches the appropriate 'ConvexEntity' elements, handles JSON parsing of the 'jsonData' payload, and returns a user-facing string. Use the registered '@Dependency private var modelContainer: ModelContainer' for query execution.
 2. An Android Jetpack AppFunction class using '@AppFunction(isDescribedByKDoc = true)' that searches the local 'convex_database' AppSearch session and returns a corresponding string. Include strict parameter constraints and robust KDocs.
 ```
 

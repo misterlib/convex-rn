@@ -10,10 +10,13 @@ Pod::Spec.new do |s|
  s.license      = package["license"]
  s.authors      = package["author"]
 
- s.platforms    = { :ios => min_ios_version_supported }
+ # SwiftData + App Intents require iOS 17+
+ s.platforms    = { :ios => "17.0" }
  s.source       = { :git => "https://github.com/misterlib/convex-rn.git", :tag => "#{s.version}" }
 
  s.source_files = "ios/**/*.{h,m,mm,swift,cpp}"
+ # Notes AssistantSchemas require iOS 18+; core sync uses ConvexBridge + SwiftData only.
+ s.exclude_files = "ios/siri/**/*"
  s.private_header_files = "ios/**/*.h"
 
  install_modules_dependencies(s)

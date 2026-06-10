@@ -40,7 +40,7 @@ Install the library along with its peer dependencies:
 npm install convex-rn react-native-mmkv @react-native-community/netinfo convex
 ```
 
-*Note: For iOS SwiftData support, ensure your app targets iOS 17+ and has App Groups enabled. For Android AppSearch/AppFunctions support, configure the Kotlin Symbolic Processing (KSP) plugin in your gradle files.*
+*Note: For iOS SwiftData support, ensure your app targets iOS 17+ (e.g., using `platform :ios, '17.0'` in your Podfile) and has App Groups enabled. If you want to use Siri/Notes App Intents, your host application must target **iOS 18+**. For Android AppSearch/AppFunctions support, configure the Kotlin Symbolic Processing (KSP) plugin in your gradle files.*
 
 ### Initialization
 
@@ -122,15 +122,42 @@ For detailed information on configuring off-thread execution, understanding deno
 
 ### Out-of-the-Box Generic Search
 The library automatically indexes your `indexableText` array and exposes generic search capabilities:
-- **iOS**: Conforms to standard Siri search scopes using the generic `SearchConvexIntent` `@AssistantIntent`.
 - **Android**: Registers `searchConvexData` as a Jetpack `@AppFunction` for Gemini.
+- **iOS**: Conforms to standard Siri search scopes using `SearchConvexIntent` `@AssistantIntent`. 
+  > [!NOTE]
+  > Because Apple's `.notes` schema requires **iOS 18.0+** at compile-time, these files (`SearchConvexIntent.swift` and `ConvexEntityRepresentation.swift`) are kept in `ios/siri/` and excluded from the core pod target by default so iOS 17 apps can build out-of-the-box.
+  > 
+  > To use them in your own application:
+  > 1. Set your host app's deployment target to **iOS 18.0** or newer.
+  > 2. Copy the files from `node_modules/convex-rn/ios/siri/` into your main iOS application target.
+  > 3. Make sure to `import ConvexRn` at the top of both files.
+
+For Expo users, configure the deployment target in `app.json`:
+```json
+{
+  "plugins": [
+    ["expo-build-properties", { 
+      "ios": { 
+        "deploymentTarget": "17.0" 
+      } 
+    }]
+  ]
+}
+```
+*(Use `"deploymentTarget": "18.0"` if you are integrating the Siri / Notes intents).*
 
 ### Custom App-Level Intents
 To support specialized queries (e.g. *"When was the last time Erin was at an event?"*), app developers declare custom intents inside their application codebase. Because the library registers the generic SwiftData `ModelContainer` globally, your custom intent can fetch the container and resolve data instantly:
 
 ```swift
 // Inside your main iOS app target
+import AppIntents
+import SwiftData
+import ConvexRn
+
 public struct GetLastEventForAttendeeIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Get Last Event For Attendee"
+    
     @Parameter(title: "Attendee Name") var attendeeName: String
     
     // Injected by our convex-rn library during boot
