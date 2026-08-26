@@ -8,6 +8,12 @@ jest.mock('../NativeConvexBridge', () => ({
   applyDelta: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('react-native-mmkv', () => ({
+  createMMKV: () => {
+    throw new Error('MMKV unavailable in tests');
+  },
+}));
+
 // Mock variables to capture callbacks inside tests
 let mockConnectionCallback: any = null;
 let mockQueryCallback: any = null;
@@ -188,5 +194,147 @@ describe('ConvexSyncEngine', () => {
 
     // Verify mutation was discarded and removed from queue
     expect(syncStorage.getItem('offline_mutations')).toBe('[]');
+  });
+
+  it('should treat {a,b} and {b,a} as the same query cache key', async () => {
+    const onChange = jest.fn();
+    engine.subscribeQuery(
+      'tasks:list',
+      { ministryId: 'm1', userId: 'u1' },
+      onChange
+    );
+
+    await mockQueryCallback([{ _id: '1', title: 'Task 1' }]);
+
+    expect(
+      engine.getCachedQueryResults('tasks:list', {
+        userId: 'u1',
+        ministryId: 'm1',
+      })
+    ).toEqual([{ _id: '1', title: 'Task 1' }]);
+    expect(
+      engine.hasCachedQuery('tasks:list', { userId: 'u1', ministryId: 'm1' })
+    ).toBe(true);
+  });
+
+  it('should expose connection and queue observers', async () => {
+    const connection = jest.fn();
+    const queue = jest.fn();
+    engine.subscribeConnectionState(connection);
+    engine.subscribeQueue(queue);
+
+    expect(connection).toHaveBeenCalledWith(true);
+    expect(queue).toHaveBeenCalledWith(0);
+    expect(engine.getIsOnline()).toBe(true);
+    expect(engine.getQueuedMutationCount()).toBe(0);
+
+    mockClientInstance.mutation.mockRejectedValueOnce(
+      new Error('WebSocket closed')
+    );
+    await engine.performMutation(
+      'tasks',
+      'tasks:create',
+      '123',
+      { title: 'Queued' },
+      { title: 'Queued' }
+    );
+
+    expect(engine.getQueuedMutationCount()).toBe(1);
+    expect(queue).toHaveBeenCalledWith(1);
+  });
+
+  it('should upsert by match when docId is omitted', async () => {
+    syncStorage.setItem(
+      'cache_table_tasks:task_1',
+      JSON.stringify({ _id: 'task_1', title: 'Old', date: '20240101' })
+    );
+    syncStorage.setItem('cache_table_tasks__ids', JSON.stringify(['task_1']));
+
+    mockClientInstance.mutation.mockRejectedValueOnce(
+      new Error('WebSocket closed')
+    );
+
+    await engine.performMutation({
+      table: 'tasks',
+      mutationPath: 'tasks:update',
+      match: (doc) => doc.date === '20240101',
+      localFields: { title: 'New' },
+      mutationArgs: { date: '20240101', title: 'New' },
+    });
+
+    expect(engine.getCachedItem('tasks', 'task_1').title).toBe('New');
+    const queue = JSON.parse(syncStorage.getItem('offline_mutations') || '[]');
+    expect(queue[0].docId).toBe('task_1');
+  });
+
+  it('should emit onMutationRejected when a validation error discards a write', async () => {
+    const rejected = jest.fn();
+    engine.onMutationRejected(rejected);
+    mockClientInstance.mutation.mockRejectedValueOnce(
+      new Error('Validation failed: Title is required')
+    );
+
+    syncStorage.setItem(
+      'offline_mutations',
+      JSON.stringify([
+        {
+          queueId: 'mut_3',
+          tableName: 'tasks',
+          mutationPath: 'tasks:create',
+          docId: '123',
+          localFields: { title: '' },
+          mutationArgs: { title: '' },
+          timestamp: Date.now(),
+        },
+      ])
+    );
+
+    await engine.processMutationQueue();
+    expect(rejected).toHaveBeenCalled();
+    expect(rejected.mock.calls[0][0].queueId).toBe('mut_3');
+  });
+
+  it('should skip non-array query results without throwing', async () => {
+    const onChange = jest.fn();
+    engine.subscribeQuery('tasks:list', {}, onChange);
+    await mockQueryCallback({ users: [], ministryMembers: [] });
+    expect(onChange).toHaveBeenCalled();
+    expect(engine.getCachedQueryResults('tasks:list', {})).toEqual([]);
+  });
+
+  it('should accept a shared ConvexClient without constructing another', () => {
+    const { ConvexClient } = require('convex/browser');
+    ConvexClient.mockClear();
+
+    const shared = {
+      subscribeToConnectionState: jest.fn().mockReturnValue(jest.fn()),
+      onUpdate: jest.fn().mockReturnValue(jest.fn()),
+      mutation: jest.fn(),
+      close: jest.fn(),
+      setAuth: jest.fn(),
+    };
+
+    const sharedEngine = new ConvexSyncEngine(convexUrl, {
+      schemaMap: { 'tasks:list': { table: 'tasks' } },
+      client: shared as any,
+    });
+
+    expect(ConvexClient).not.toHaveBeenCalled();
+    sharedEngine.setAuth(async () => 'token');
+    expect(shared.setAuth).toHaveBeenCalled();
+    sharedEngine.close();
+    expect(shared.close).not.toHaveBeenCalled();
+  });
+
+  it('should migrate a legacy table blob into per-id keys', () => {
+    syncStorage.setItem(
+      'cache_table_tasks',
+      JSON.stringify([{ _id: 'a', title: 'Legacy' }])
+    );
+    expect(engine.getCachedItem('tasks', 'a')).toEqual({
+      _id: 'a',
+      title: 'Legacy',
+    });
+    expect(syncStorage.getItem('cache_table_tasks')).toBeNull();
   });
 });

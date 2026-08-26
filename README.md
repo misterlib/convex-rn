@@ -76,13 +76,25 @@ const syncEngine = new ConvexSyncEngine('https://your-convex-deployment.convex.c
 Use the `useSyncQuery` hook inside your components to retrieve cached data synchronously on mount, establish a WebSocket-based real-time query subscription, and auto-update the UI when data changes:
 
 ```typescript
-import { useSyncQuery } from 'convex-rn';
+import { useSyncQuery, useSyncQueryState } from 'convex-rn';
 
 function TaskList() {
   // 1. Synchronously renders the cached list from local storage on mount
   // 2. Auto-subscribes to Convex WebSocket updates in the background
   // 3. Auto-updates UI and native AI indices when query data changes on the server
-  const tasks = useSyncQuery<Task>(syncEngine, 'tasks:list', { creator: userId });
+  const tasks = useSyncQuery<Task>(
+    syncEngine,
+    'tasks:list',
+    userId ? { creator: userId } : 'skip'
+  );
+
+  // Distinguish never-synced vs synced-empty:
+  const { data, status } = useSyncQueryState<Task>(
+    syncEngine,
+    'tasks:list',
+    userId ? { creator: userId } : 'skip'
+  );
+  // status: 'missing' | 'cache' | 'live'
 
   return (
     // Render list...
@@ -112,7 +124,40 @@ await syncEngine.performMutation(
   { completed: true },    // Local optimistic fields
   { id: 'task_abc123' }   // Mutation arguments sent to server
 );
+
+// Upsert when the client does not know the document id yet:
+await syncEngine.performMutation({
+  table: 'eventRSVPs',
+  mutationPath: 'eventRSVPs:recordRSVP',
+  match: (doc) => doc.personId === personId && doc.date === date,
+  localFields: { response: 'YES' },
+  mutationArgs: { personId, date, response: 'YES' },
+});
 ```
+
+### Connection, queue, auth, and single documents
+
+```typescript
+import {
+  useSyncConnection,
+  useSyncDocument,
+} from 'convex-rn';
+
+const { isOnline, queuedCount } = useSyncConnection(syncEngine);
+const event = useSyncDocument(syncEngine, 'events:getById', { id });
+
+// Share an existing ConvexClient and forward Convex Auth:
+const syncEngine = new ConvexSyncEngine(convexUrl, {
+  schemaMap,
+  client: existingConvexClient,
+});
+syncEngine.setAuth(async () => token);
+syncEngine.onMutationRejected((mutation, error) => {
+  // toast / undo optimistic UI
+});
+```
+
+Query and mutation paths accept a string (`"tasks:list"`) or a Convex `FunctionReference` (`api.tasks.list`).
 
 ---
 
