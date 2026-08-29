@@ -1,5 +1,8 @@
 # AI Assistant Integration Guide: Off-Thread Performance, Denormalization, & Custom Intents
 
+> [!CAUTION]
+> Prototype only. This path is **not** part of the supported experimental surface and is **not** production-ready. See [STATUS.md](../STATUS.md).
+
 This guide explains how `convex-rn` manages threading performance, details critical pitfalls when presenting data to system AI agents, and provides blueprints for implementing app-specific custom intents.
 
 ---

@@ -4,11 +4,11 @@ import { resolveFunctionPath } from '../functionPath';
 
 describe('canonicalizeArgs', () => {
   it('sorts object keys so argument order does not matter', () => {
-    expect(canonicalizeArgs({ ministryId: 'm', userId: 'u' })).toBe(
-      canonicalizeArgs({ userId: 'u', ministryId: 'm' })
+    expect(canonicalizeArgs({ listId: 'inbox', ownerId: 'u' })).toBe(
+      canonicalizeArgs({ ownerId: 'u', listId: 'inbox' })
     );
-    expect(queryCacheKey('events:list', { b: 1, a: 2 })).toBe(
-      queryCacheKey('events:list', { a: 2, b: 1 })
+    expect(queryCacheKey('tasks:list', { b: 1, a: 2 })).toBe(
+      queryCacheKey('tasks:list', { a: 2, b: 1 })
     );
   });
 });

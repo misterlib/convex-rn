@@ -22,6 +22,8 @@ body:
           required: true
         - label: I checked for possible duplicate issues, with possible answers.
           required: true
+        - label: I understand this library is experimental, not affiliated with Convex, Inc., and not production-ready (see STATUS.md).
+          required: true
   - type: textarea
     id: summary
     attributes:

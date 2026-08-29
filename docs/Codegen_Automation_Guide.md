@@ -1,5 +1,8 @@
 # Codegen Automation Guide: Keeping Convex & Mobile Schemas in Sync
 
+> [!CAUTION]
+> Prototype notes only. Not a supported product feature. See [STATUS.md](../STATUS.md).
+
 As your Convex backend schema grows and changes, maintaining manual duplicate declarations in iOS (SwiftData), Android (AppSearch), and React Native TypeScript (`schemaMap`) becomes a liability. 
 
 We can automate this process entirely by writing a **Codegen compiler script** that hooks into the Convex developer lifecycle.

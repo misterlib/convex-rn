@@ -200,20 +200,20 @@ describe('ConvexSyncEngine', () => {
     const onChange = jest.fn();
     engine.subscribeQuery(
       'tasks:list',
-      { ministryId: 'm1', userId: 'u1' },
+      { listId: 'inbox', ownerId: 'u1' },
       onChange
     );
 
-    await mockQueryCallback([{ _id: '1', title: 'Task 1' }]);
+    await mockQueryCallback([{ _id: '1', title: 'Buy milk' }]);
 
     expect(
       engine.getCachedQueryResults('tasks:list', {
-        userId: 'u1',
-        ministryId: 'm1',
+        ownerId: 'u1',
+        listId: 'inbox',
       })
-    ).toEqual([{ _id: '1', title: 'Task 1' }]);
+    ).toEqual([{ _id: '1', title: 'Buy milk' }]);
     expect(
-      engine.hasCachedQuery('tasks:list', { userId: 'u1', ministryId: 'm1' })
+      engine.hasCachedQuery('tasks:list', { ownerId: 'u1', listId: 'inbox' })
     ).toBe(true);
   });
 
@@ -297,7 +297,7 @@ describe('ConvexSyncEngine', () => {
   it('should skip non-array query results without throwing', async () => {
     const onChange = jest.fn();
     engine.subscribeQuery('tasks:list', {}, onChange);
-    await mockQueryCallback({ users: [], ministryMembers: [] });
+    await mockQueryCallback({ projects: [], tags: [] });
     expect(onChange).toHaveBeenCalled();
     expect(engine.getCachedQueryResults('tasks:list', {})).toEqual([]);
   });

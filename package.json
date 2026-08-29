@@ -1,7 +1,7 @@
 {
   "name": "convex-rn",
   "version": "0.2.1",
-  "description": "Local-first sync engine for Convex React Native",
+  "description": "EXPERIMENTAL — not for production. Unofficial opt-in offline cache and mutation queue for Convex on React Native / Expo.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
   "exports": {
@@ -43,7 +43,14 @@
     "build:web": "vite build"
   },
   "keywords": [
+    "experimental",
+    "unstable",
+    "unofficial",
+    "not-production-ready",
+    "convex",
     "react-native",
+    "expo",
+    "offline",
     "ios",
     "android"
   ],
@@ -51,13 +58,14 @@
     "type": "git",
     "url": "git+https://github.com/misterlib/convex-rn.git"
   },
-  "author": "Kurt Libby <misterlib@gmail.com> ()",
+  "author": "Kurt Libby",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/misterlib/convex-rn/issues"
   },
   "homepage": "https://github.com/misterlib/convex-rn#readme",
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {

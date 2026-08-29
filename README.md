@@ -1,94 +1,139 @@
-# React Native Convex Sync (convex-rn)
+# convex-rn
 
-`convex-rn` is an independent, open-source local-first persistence engine for React Native applications syncing with Convex. It shifts the Convex React Native integration from a simple UI-bound query client to a decoupled database-backed local synchronization engine, supporting cross-process headless execution for system-level AI assistants.
+[![Status: experimental](https://img.shields.io/badge/status-experimental-orange)](./STATUS.md)
+[![Not production-ready](https://img.shields.io/badge/production-not%20ready-red)](./STATUS.md)
+[![Version 0.x](https://img.shields.io/badge/semver-0.x%20breaking%20OK-lightgrey)](./STATUS.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-With this library, Siri (via iOS App Intents & SwiftData) and Gemini (via Android AppFunctions & AppSearch) can query and access user data headlessly in the background without needing to boot the React Native UI or the JS Bridge runtime.
+Opt-in offline cache and mutation queue for [Convex](https://www.convex.dev) apps on React Native / Expo.
+
+> [!CAUTION]
+> **Experimental software. Do not use this in production apps.**
+>
+> This is a first public release while the API and native stack are still being proven. `0.x` versions may change without a migration path. There is no stability guarantee, no SLA, and no promise that cached data or queued mutations will survive a version bump.
+>
+> If you need production offline sync today, do not adopt this package.
 
 > [!WARNING]
-> **Disclaimer**: This is an independent open-source project. It is **not** affiliated with, endorsed by, or associated with Convex (Convex, Inc.).
+> **Unofficial.** This is an independent project by [Kurt Libby](https://github.com/misterlib). It is **not** affiliated with, endorsed by, or supported by Convex (Convex, Inc.). “Convex” is a trademark of its owner.
+
+Read [current status](./STATUS.md) before installing.
 
 ---
 
-## Key Features
+## What this is
 
-*   **Real-Time WebSocket Sync**: Connects to Convex via persistent WebSockets, subscribing to queries using the official Convex JS engine. Pushes server-side data changes in real-time, eliminating the need for query polling.
-*   **Event-Driven Connection Recovery**: Automatically monitors connection state. The instant the WebSocket reconnects after being offline, it automatically flushes the queue of pending offline mutations.
-*   **TypeScript Single Source of Truth**: Unified synchronization logic, conflict resolution, version control, and optimistic updates handled entirely in TypeScript.
-*   **Decoupled Local Cache**: A high-performance synchronous local database (backed by `react-native-mmkv`) that caches query parameter sets reactively, rendering instantly from cache on mount.
-*   **Generic Database Representation**: Rather than compiling app-specific tables in native code, the native bridges manage a schema-less, highly indexable document model.
-*   **JS-Defined Indexing & Denormalization**: Developers define custom index text extraction rules in JavaScript during synchronization, allowing relational joins to be flattened and prepared for AI assistants before writing to disk.
-*   **Off-Thread Performance**: Native modules offload all database write operations and system searches to background threads (Swift cooperative Task pool on iOS, custom ExecutorService on Android) to keep the React Native UI thread fully responsive.
+A **progressive, opt-in** layer you add next to `convex/react`:
 
-## Coexistence & Progressive Adoption
+- Cache selected query results on device (MMKV when native modules are present).
+- Render that cache on mount, then keep it fresh over the Convex WebSocket.
+- Queue mutations while offline and flush them when the connection returns.
+- Leave every other screen on normal `useQuery` / `useMutation`.
 
-`convex-rn` is designed as a **progressive, opt-in** library. **You do NOT need to replace your standard Convex queries.**
+You do **not** replace your Convex client. You do **not** have to wrap the whole app.
 
-*   **When to keep standard queries (`useQuery` from `convex/react`)**: For standard, connection-reliant features (like settings pages, admin dashboards, or real-time chats) that do not need to work offline or be searchable by Siri/Gemini. Keep these unchanged.
-*   **When to use `useSyncQuery` from `convex-rn`**: For core features (like lists, notes, or tasks) where you want local-first caching (instant rendering on mount), offline writing/queueing, and native indexing so system-level AI assistants can query your data headlessly.
+## What this is not
 
-This selective caching approach prevents device database bloat, saves bandwidth, and eliminates the risk of introducing offline complexities to non-critical parts of your application.
+- Not an official Convex product or a drop-in replacement for `convex/react`.
+- Not a general-purpose local database or CRDT.
+- Not production-ready (see [STATUS.md](./STATUS.md)).
+- Not something Stallion / EAS Update / OTA can fully enable. MMKV v4 needs NitroModules in the **native binary**. A JS-only update will fall back to an in-memory cache and lose data on process death.
+
+Siri / Gemini / App Intents indexing exists in this repo as an early experiment. It is **not** the supported path and is not what we are testing. See [docs/AI_Integration_Guide.md](./docs/AI_Integration_Guide.md) only if you are exploring that yourself.
 
 ---
 
-## Getting Started
+## Requirements
 
-### Installation
+| Requirement | Notes |
+| --- | --- |
+| React Native New Architecture | TurboModules / Nitro must be enabled |
+| `react-native-mmkv` v4 | Loads Nitro at import time |
+| `react-native-nitro-modules` | Peer of MMKV v4 |
+| `@react-native-community/netinfo` | Connection signals |
+| `convex` ≥ 1.16 | Official JS client |
+| iOS deployment target 17.0+ | Required by current native deps |
+| A **native rebuild** | `npx expo run:ios` / `run:android` or EAS Build — not Metro reload alone |
 
-Install the library along with its peer dependencies:
+Query functions you sync **must return an array of documents with `_id`**. Object / null / paginated shapes are not supported yet.
+
+---
+
+## Install
+
+Pin an exact `0.x` version. Do not use `latest` or `*` in an app you care about.
 
 ```sh
-npm install convex-rn react-native-mmkv @react-native-community/netinfo convex
+npm install convex-rn@0.2.1 react-native-mmkv @react-native-community/netinfo react-native-nitro-modules
 ```
 
-*Note: For iOS SwiftData support, ensure your app targets iOS 17+ (e.g., using `platform :ios, '17.0'` in your Podfile) and has App Groups enabled. If you want to use Siri/Notes App Intents, your host application must target **iOS 18+**. For Android AppSearch/AppFunctions support, configure the Kotlin Symbolic Processing (KSP) plugin in your gradle files.*
+Expo iOS target (example):
 
-### Initialization
+```json
+{
+  "plugins": [
+    ["expo-build-properties", { "ios": { "deploymentTarget": "17.0" } }]
+  ]
+}
+```
 
-Define your query schema mappings and indexable text rules when instantiating the sync engine in React Native:
+Then rebuild the native app. If Nitro is missing, `convex-rn` will log a warning and use memory storage so the JS bundle does not crash — that is **not** offline persistence.
 
-```typescript
+### EAS Build
+
+A public GitHub repo is enough. Pin a commit SHA:
+
+```json
+"convex-rn": "github:misterlib/convex-rn#<commit-sha>"
+```
+
+EAS can clone public repositories without a `GITHUB_TOKEN`. npm publish is optional and not required.
+
+---
+
+## Quick start
+
+### 1. Create one engine per app
+
+Map only the Convex query paths you want cached to a local table name.
+
+```ts
 import { ConvexSyncEngine } from 'convex-rn';
 
-const syncEngine = new ConvexSyncEngine('https://your-convex-deployment.convex.cloud', {
-  schemaMap: {
-    // Map Convex query paths to local table names
-    "tasks:list": { table: "tasks" },
-    "events:list": { table: "events" },
-    "users:list": { table: "users" }
-  },
-  indexRules: {
-    // Flat text keywords indexed for Siri and Gemini search queries
-    tasks: (doc) => [doc.title, doc.completed ? "completed" : "pending"],
-    events: (doc, getCachedItem) => {
-      // Easily denormalize relational data (e.g. user names) in TypeScript!
-      const attendeeNames = doc.attendeeIds
-        .map(userId => getCachedItem('users', userId)?.name)
-        .filter(Boolean);
-        
-      return [doc.title, ...attendeeNames];
-    }
+export const syncEngine = new ConvexSyncEngine(
+  process.env.EXPO_PUBLIC_CONVEX_URL!,
+  {
+    schemaMap: {
+      'tasks:list': { table: 'tasks' },
+      'events:list': { table: 'events' },
+    },
   }
-});
+);
 ```
 
-### Querying Data
+Optional: share an existing `ConvexClient` and forward auth so you do not open a second WebSocket:
 
-Use the `useSyncQuery` hook inside your components to retrieve cached data synchronously on mount, establish a WebSocket-based real-time query subscription, and auto-update the UI when data changes:
+```ts
+const syncEngine = new ConvexSyncEngine(convexUrl, {
+  schemaMap,
+  client: existingConvexClient,
+});
 
-```typescript
+syncEngine.setAuth(async () => token);
+```
+
+### 2. Read with cache + live updates
+
+```tsx
 import { useSyncQuery, useSyncQueryState } from 'convex-rn';
 
-function TaskList() {
-  // 1. Synchronously renders the cached list from local storage on mount
-  // 2. Auto-subscribes to Convex WebSocket updates in the background
-  // 3. Auto-updates UI and native AI indices when query data changes on the server
+function TaskList({ userId }: { userId: string | null }) {
   const tasks = useSyncQuery<Task>(
     syncEngine,
     'tasks:list',
     userId ? { creator: userId } : 'skip'
   );
 
-  // Distinguish never-synced vs synced-empty:
   const { data, status } = useSyncQueryState<Task>(
     syncEngine,
     'tasks:list',
@@ -96,141 +141,104 @@ function TaskList() {
   );
   // status: 'missing' | 'cache' | 'live'
 
-  return (
-    // Render list...
-  );
+  return null;
 }
 ```
 
-If you need to query or refresh data outside of a React hook context (e.g. in a background task), you can query manually or check the cache:
+Paths accept a string (`"tasks:list"`) or a Convex `FunctionReference` (`api.tasks.list`).
 
-```typescript
-// Synchronous manual check of MMKV cache
-const cachedTasks = syncEngine.getCachedQueryResults('tasks:list', { creator: userId });
+### 3. Write with an optimistic local update
 
-// Asynchronous query fetch (HTTP fallback/background execution)
-const freshTasks = await syncEngine.syncQuery('tasks:list', { creator: userId });
-```
-
-### Optimistic Mutations
-
-Apply local optimistic updates instantly and sync mutations asynchronously:
-
-```typescript
+```ts
 await syncEngine.performMutation(
-  'tasks',                // Table name
-  'tasks:toggle',         // Mutation path
-  'task_abc123',          // Document ID
-  { completed: true },    // Local optimistic fields
-  { id: 'task_abc123' }   // Mutation arguments sent to server
+  'tasks',
+  'tasks:toggle',
+  'task_abc123',
+  { completed: true },
+  { id: 'task_abc123' }
 );
 
 // Upsert when the client does not know the document id yet:
 await syncEngine.performMutation({
-  table: 'eventRSVPs',
-  mutationPath: 'eventRSVPs:recordRSVP',
-  match: (doc) => doc.personId === personId && doc.date === date,
-  localFields: { response: 'YES' },
-  mutationArgs: { personId, date, response: 'YES' },
+  table: 'tasks',
+  mutationPath: 'tasks:completeByTitle',
+  match: (doc) => doc.title === title && doc.listId === listId,
+  localFields: { completed: true },
+  mutationArgs: { title, listId, completed: true },
 });
 ```
 
-### Connection, queue, auth, and single documents
+Rejected mutations (validation, auth, etc.) are dropped from the queue. Subscribe if you need to undo UI:
 
-```typescript
-import {
-  useSyncConnection,
-  useSyncDocument,
-} from 'convex-rn';
-
-const { isOnline, queuedCount } = useSyncConnection(syncEngine);
-const event = useSyncDocument(syncEngine, 'events:getById', { id });
-
-// Share an existing ConvexClient and forward Convex Auth:
-const syncEngine = new ConvexSyncEngine(convexUrl, {
-  schemaMap,
-  client: existingConvexClient,
-});
-syncEngine.setAuth(async () => token);
+```ts
 syncEngine.onMutationRejected((mutation, error) => {
-  // toast / undo optimistic UI
+  // toast / revert optimistic fields
 });
 ```
 
-Query and mutation paths accept a string (`"tasks:list"`) or a Convex `FunctionReference` (`api.tasks.list`).
+### 4. Connection banner
 
----
+```tsx
+import { useSyncConnection } from 'convex-rn';
 
-## AI Assistant Integration (Siri & Gemini)
-
-For detailed information on configuring off-thread execution, understanding denormalization pitfalls, and setting up coding templates for custom assistant intents, see the [AI Integration Guide](./docs/AI_Integration_Guide.md).
-
-### Out-of-the-Box Generic Search
-The library automatically indexes your `indexableText` array and exposes generic search capabilities:
-- **Android**: Registers `searchConvexData` as a Jetpack `@AppFunction` for Gemini.
-- **iOS**: Conforms to standard Siri search scopes using `SearchConvexIntent` `@AssistantIntent`. 
-  > [!NOTE]
-  > Because Apple's `.notes` schema requires **iOS 18.0+** at compile-time, these files (`SearchConvexIntent.swift` and `ConvexEntityRepresentation.swift`) are kept in `ios/siri/` and excluded from the core pod target by default so iOS 17 apps can build out-of-the-box.
-  > 
-  > To use them in your own application:
-  > 1. Set your host app's deployment target to **iOS 18.0** or newer.
-  > 2. Copy the files from `node_modules/convex-rn/ios/siri/` into your main iOS application target.
-  > 3. Make sure to `import ConvexRn` at the top of both files.
-
-For Expo users, configure the deployment target in `app.json`:
-```json
-{
-  "plugins": [
-    ["expo-build-properties", { 
-      "ios": { 
-        "deploymentTarget": "17.0" 
-      } 
-    }]
-  ]
-}
-```
-*(Use `"deploymentTarget": "18.0"` if you are integrating the Siri / Notes intents).*
-
-### Custom App-Level Intents
-To support specialized queries (e.g. *"When was the last time Erin was at an event?"*), app developers declare custom intents inside their application codebase. Because the library registers the generic SwiftData `ModelContainer` globally, your custom intent can fetch the container and resolve data instantly:
-
-```swift
-// Inside your main iOS app target
-import AppIntents
-import SwiftData
-import ConvexRn
-
-public struct GetLastEventForAttendeeIntent: AppIntent {
-    public static var title: LocalizedStringResource = "Get Last Event For Attendee"
-    
-    @Parameter(title: "Attendee Name") var attendeeName: String
-    
-    // Injected by our convex-rn library during boot
-    @Dependency private var modelContainer: ModelContainer
-
-    public func perform() async throws -> some IntentResult {
-        let context = ModelContext(modelContainer)
-        // Query generic ConvexEntities where table == "events" and indexableText contains attendeeName...
-    }
+function OfflineSyncBanner() {
+  const { isOnline, queuedCount } = useSyncConnection(syncEngine);
+  if (isOnline && queuedCount === 0) return null;
+  return null; // render your own banner
 }
 ```
 
 ---
 
-## Schema Synchronization & Codegen Automation
+## When to keep `useQuery`
 
-To keep your mobile app's local data structures, Siri `AppEntities`, and Gemini `AppSearch` schemas in perfect alignment with your Convex backend schema (`convex/schema.ts`) automatically, you can implement code generation.
+Keep `convex/react` for anything that should not work offline: settings, admin tools, chats, one-off detail fetches, paginated search, and queries that do not return `Array<{ _id }>`.
 
-We have compiled a complete automation blueprint in our [Codegen Automation Guide](./docs/Codegen_Automation_Guide.md), containing:
-*   A **Node.js AST parser script** that reads `convex/schema.ts` and outputs generated Swift, Kotlin, and TypeScript mapping files.
-*   **Developer Lifecycle Hooks** to trigger compilation automatically during `npx convex dev`, VSCode file saves, and git commits.
+Use `convex-rn` only for the lists and writes you have explicitly mapped in `schemaMap`.
+
+---
+
+## Limitations (current)
+
+- **0.x breakage.** Field names, cache key formats, and hook signatures can change.
+- **Array queries only.** Non-array results are logged and ignored.
+- **Native rebuild required** for durable MMKV. OTA cannot ship Nitro.
+- **Second WebSocket** unless you pass `{ client }` into the constructor.
+- **No automatic conflict merge.** Server rejection discards that queued mutation.
+- **Local cache is not encrypted** beyond what MMKV / the OS provide. Do not treat it as a vault for secrets.
+- **Siri / Gemini / codegen** in `docs/` are prototypes, not a supported product surface.
+
+---
+
+## Versioning
+
+| Version | Meaning |
+| --- | --- |
+| `0.x.y` | Experimental. Breaking changes allowed on minor bumps. |
+| `1.0.0` | **Will not be published until this is actually production-ready.** Absence of 1.0 is intentional. |
+
+See [STATUS.md](./STATUS.md) for what is currently tested.
+
+---
+
+## Security
+
+Please report vulnerabilities privately. See [SECURITY.md](./SECURITY.md).
+
+Do not open a public issue for a security problem.
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) for more details.
+This project is early. Small, well-tested PRs are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Code of Conduct](./CODE_OF_CONDUCT.md).
+
+If you are evaluating the library, open a discussion rather than assuming the API is stable.
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+[MIT](./LICENSE) — provided **as is**, without warranty. That includes fitness for production use.
+
+Convex, the Convex logo, and related marks are trademarks of Convex, Inc. See [NOTICE](./NOTICE.md).
