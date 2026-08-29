@@ -25,8 +25,7 @@ public final class ConvexBridge: NSObject {
 
     override public init() {
         super.init()
-        let groupIdentifier = "group.com.convexrn.shared"
-        let config = ModelConfiguration(groupContainer: .identifier(groupIdentifier))
+        let config = Self.makeModelConfiguration()
         do {
             let container = try ModelContainer(for: ConvexEntity.self, configurations: config)
             self.sharedContainer = container
@@ -37,6 +36,19 @@ public final class ConvexBridge: NSObject {
         } catch {
             print("[ConvexBridge] Failed to initialize SwiftData ModelContainer: \(error.localizedDescription)")
         }
+    }
+
+    /// SwiftData asserts (SIGTRAP) on iOS 26/27 if groupContainer points at an
+    /// App Group the host app did not entitle. Fall back to Application Support.
+    private static func makeModelConfiguration() -> ModelConfiguration {
+        let groupIdentifier = "group.com.convexrn.shared"
+        if FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupIdentifier) != nil {
+            return ModelConfiguration(groupContainer: .identifier(groupIdentifier))
+        }
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.temporaryDirectory
+        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        return ModelConfiguration(url: support.appendingPathComponent("ConvexRN.store"))
     }
 
     @objc
