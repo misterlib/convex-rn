@@ -1,6 +1,7 @@
 package com.convexrn
 
 import android.content.Context
+import androidx.appsearch.app.AppSearchSession
 import androidx.appsearch.app.PutDocumentsRequest
 import androidx.appsearch.app.RemoveByDocumentIdRequest
 import androidx.appsearch.app.SetSchemaRequest
@@ -39,8 +40,8 @@ class ConvexBridgeModule(reactContext: ReactApplicationContext) :
                     PlatformStorage.SearchContext.Builder(appContext, "convex_database").build()
                 )
 
-                Futures.addCallback(sessionFuture, object : FutureCallback<PlatformStorage.SearchSession> {
-                    override fun onSuccess(session: PlatformStorage.SearchSession?) {
+                Futures.addCallback(sessionFuture, object : FutureCallback<AppSearchSession> {
+                    override fun onSuccess(session: AppSearchSession?) {
                         if (session == null) {
                             promise.reject("APPSEARCH_ERROR", "Failed to retrieve AppSearch session")
                             return
