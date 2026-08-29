@@ -1,7 +1,7 @@
 buildscript {
   ext.ConvexBridgeConfig = [
     kotlinVersion: "2.1.20",
-    kspVersion: "2.1.20-1.0.31",
+    // kspVersion: "2.1.20-1.0.31", // Re-enable when upgrading to AGP 9.1.0 for AppFunctions
     minSdkVersion: 24,
     compileSdkVersion: 36,
     targetSdkVersion: 36
@@ -23,14 +23,14 @@ buildscript {
   dependencies {
     classpath "com.android.tools.build:gradle:8.7.2"
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
-    // KSP compiler dependency matching our Kotlin version
-    classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${getExtOrDefault('kspVersion')}"
+    // Note: KSP classpath can be re-added when upgrading to AGP 9.1.0 for AppFunctions
+    // classpath "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:${getExtOrDefault('kspVersion')}"
   }
 }
 
 apply plugin: "com.android.library"
 apply plugin: "kotlin-android"
-apply plugin: "com.google.devtools.ksp"
+apply plugin: "kotlin-kapt"
 apply plugin: "com.facebook.react"
 
 android {
@@ -78,12 +78,13 @@ dependencies {
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
 
   // AppSearch local database indexing dependencies
+  // Note: AppSearch compiler requires KAPT, not KSP
   implementation "androidx.appsearch:appsearch:1.1.0"
   implementation "androidx.appsearch:appsearch-platform-storage:1.1.0"
-  ksp "androidx.appsearch:appsearch-compiler:1.1.0"
+  kapt "androidx.appsearch:appsearch-compiler:1.1.0"
 
   // Note: Jetpack AppFunctions for Gemini agent execution requires AGP 9.1.0+.
-  // Re-enable when upgrading to AGP 9.1.0:
+  // Re-enable when upgrading to AGP 9.1.0 (also requires KSP instead of KAPT):
   // implementation "androidx.appfunctions:appfunctions:1.0.0-alpha10"
   // ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha10"
 }
