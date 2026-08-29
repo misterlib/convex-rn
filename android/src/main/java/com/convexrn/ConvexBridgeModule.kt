@@ -5,6 +5,7 @@ import androidx.appsearch.app.AppSearchSession
 import androidx.appsearch.app.PutDocumentsRequest
 import androidx.appsearch.app.RemoveByDocumentIdRequest
 import androidx.appsearch.app.SetSchemaRequest
+import androidx.appsearch.app.SetSchemaResponse
 import androidx.appsearch.platformstorage.PlatformStorage
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
@@ -54,8 +55,8 @@ class ConvexBridgeModule(reactContext: ReactApplicationContext) :
                                 .build()
                         )
 
-                        Futures.addCallback(schemaFuture, object : FutureCallback<SetSchemaRequest.Response> {
-                            override fun onSuccess(response: SetSchemaRequest.Response?) {
+                        Futures.addCallback(schemaFuture, object : FutureCallback<SetSchemaResponse> {
+                            override fun onSuccess(response: SetSchemaResponse?) {
                                 // Maps namespace (table name) to Put builders to allow multi-table batching
                                 val putsByTable = mutableMapOf<String, PutDocumentsRequest.Builder>()
                                 val removesByTable = mutableMapOf<String, MutableList<String>>()
