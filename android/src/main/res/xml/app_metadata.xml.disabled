@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<app-metadata xmlns:android="http://schemas.android.com/apk/res/android">
-    <app-function android:name="com.convexrn.appfunctions.SearchAppFunctions" />
-</app-metadata>
