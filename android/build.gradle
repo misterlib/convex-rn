@@ -66,6 +66,13 @@ android {
 dependencies {
   implementation "com.facebook.react:react-android"
 
+  // Guava for ListenableFuture and Futures utilities
+  implementation "com.google.guava:guava:33.4.0-android"
+
+  // Kotlin coroutines for suspendCancellableCoroutine
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2"
+
   // AppSearch local database indexing dependencies
   implementation "androidx.appsearch:appsearch:1.1.0-alpha06"
   implementation "androidx.appsearch:appsearch-platform-storage:1.1.0-alpha06"
