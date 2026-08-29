@@ -69,18 +69,22 @@ dependencies {
   // Guava for ListenableFuture and Futures utilities
   implementation "com.google.guava:guava:33.4.0-android"
 
+  // AndroidX Concurrent Futures for FutureCallback
+  implementation "androidx.concurrent:concurrent-futures:1.2.0"
+
   // Kotlin coroutines for suspendCancellableCoroutine
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
   implementation "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.10.2"
+  implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
 
   // AppSearch local database indexing dependencies
-  implementation "androidx.appsearch:appsearch:1.1.0-alpha06"
-  implementation "androidx.appsearch:appsearch-platform-storage:1.1.0-alpha06"
-  ksp "androidx.appsearch:appsearch-compiler:1.1.0-alpha06"
+  implementation "androidx.appsearch:appsearch:1.1.0"
+  implementation "androidx.appsearch:appsearch-platform-storage:1.1.0"
+  ksp "androidx.appsearch:appsearch-compiler:1.1.0"
 
   // Jetpack AppFunctions dependencies for Gemini agent execution
-  implementation "androidx.appfunctions:appfunctions:1.0.0-alpha08"
-  implementation "androidx.appfunctions:appfunctions-service:1.0.0-alpha08"
-  ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha08"
+  implementation "androidx.appfunctions:appfunctions:1.0.0-alpha10"
+  implementation "androidx.appfunctions:appfunctions-service:1.0.0-alpha10"
+  ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha10"
 }
 
