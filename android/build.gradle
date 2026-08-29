@@ -3,8 +3,8 @@ buildscript {
     kotlinVersion: "2.1.20",
     kspVersion: "2.1.20-1.0.31",
     minSdkVersion: 24,
-    compileSdkVersion: 37,
-    targetSdkVersion: 37
+    compileSdkVersion: 36,
+    targetSdkVersion: 36
   ]
 
   ext.getExtOrDefault = { prop ->
@@ -82,9 +82,9 @@ dependencies {
   implementation "androidx.appsearch:appsearch-platform-storage:1.1.0"
   ksp "androidx.appsearch:appsearch-compiler:1.1.0"
 
-  // Jetpack AppFunctions dependencies for Gemini agent execution
-  // Note: appfunctions-service was removed in 1.0.0-alpha10 and consolidated into appfunctions
-  implementation "androidx.appfunctions:appfunctions:1.0.0-alpha10"
-  ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha10"
+  // Note: Jetpack AppFunctions for Gemini agent execution requires AGP 9.1.0+.
+  // Re-enable when upgrading to AGP 9.1.0:
+  // implementation "androidx.appfunctions:appfunctions:1.0.0-alpha10"
+  // ksp "androidx.appfunctions:appfunctions-compiler:1.0.0-alpha10"
 }
 
