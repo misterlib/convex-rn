@@ -10,6 +10,7 @@ export default defineConfig((env) =>
         [pack.name]: new URL('..', import.meta.url),
       },
       dedupe: Object.keys(pack.peerDependencies),
+      extensions: ['.web.tsx', '.web.ts', '.web.jsx', '.web.js', '.tsx', '.ts', '.jsx', '.js'],
     },
   })
 );

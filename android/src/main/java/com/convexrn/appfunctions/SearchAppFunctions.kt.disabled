@@ -6,9 +6,9 @@ import androidx.appsearch.app.SearchSpec
 import androidx.appsearch.platformstorage.PlatformStorage
 import com.convexrn.ConvexDocument
 import java.util.concurrent.Executors
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCancellableCoroutine
 
 class SearchAppFunctions {
 

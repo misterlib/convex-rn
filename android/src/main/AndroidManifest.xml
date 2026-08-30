@@ -1,7 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
+        <!-- AppFunctions metadata disabled until AGP 9.1.0+ is available.
+             Re-enable when upgrading:
         <property
             android:name="android.app.appfunctions.app_metadata"
             android:resource="@xml/app_metadata" />
+        -->
     </application>
 </manifest>
