@@ -1,6 +1,6 @@
 {
   "name": "convex-rn",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "EXPERIMENTAL — not for production. Unofficial opt-in offline cache and mutation queue for Convex on React Native / Expo.",
   "main": "./lib/module/index.js",
   "types": "./lib/typescript/src/index.d.ts",
